@@ -1,5 +1,5 @@
 
-const { ChoicePrompt, ComponentDialog, DialogSet, DialogTurnStatus, TextPrompt, WaterfallDialog } = require('botbuilder-dialogs');
+const { ChoicePrompt, ComponentDialog, DialogSet, DialogTurnStatus, TextPrompt, WaterfallDialog, Recognizer } = require('botbuilder-dialogs');
 
 const MAIN_WATERFALL_DIALOG = 'mainWaterfallDialog';
 // Engagement Bid Dialog
@@ -17,7 +17,6 @@ class MainDialog extends ComponentDialog {
             .addDialog(new TextPrompt('TextPrompt'))
             .addDialog(new EngagementBidDialog(ENGAGEMENT_BID_DIALOG))
             .addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
-                this.initialDialog.bind(this),
                 this.choiceCardStep.bind(this),
                 this.actStep.bind(this),
                 this.finalStep.bind(this)
@@ -44,17 +43,15 @@ class MainDialog extends ComponentDialog {
         }
     }
 
-    async initialDialog(stepContext) {
-        if(stepContext.options.restartMsg) {
-           return await stepContext.context.sendActivity(stepContext.options.restartMsg)
-        } else {
-            return stepContext.next(stepContext)
-        }
-    }
-
     async choiceCardStep(stepContext) {
+       let promptMsg = 'Choose from below options'
+        if(stepContext.options.restartMsg) {
+            promptMsg = stepContext.options.restartMsg
+         } else {
+            promptMsg
+         }
         const options = {
-            prompt: 'Choose from below options',
+            prompt: promptMsg,
             retryPrompt: 'That was not a valid choice, please select an option from below',
             choices: this.getChoices()
         };
@@ -72,6 +69,10 @@ class MainDialog extends ComponentDialog {
             },
             {
                 value: 'Option 3'
+            },
+            {
+                value: 'Exit',
+                synonyms: ['exit', 'close']
             }
         ];
 
@@ -79,6 +80,9 @@ class MainDialog extends ComponentDialog {
     }
 
     async actStep(stepContext) {
+        if(/exit/gmi.test(stepContext.result.value)) {
+         return  await stepContext.context.sendActivity('Thanks for using this bot')
+        }
         return await stepContext.beginDialog(ENGAGEMENT_BID_DIALOG, {engagementId:null, engagementIdConfirm: null});
     }
 

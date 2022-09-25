@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-const { MessageFactory, InputHints } = require('botbuilder');
+const { MessageFactory, InputHints, CardFactory, AttachmentLayoutTypes } = require('botbuilder');
 const {
     AttachmentPrompt,
     ChoiceFactory,
@@ -12,7 +12,8 @@ const {
     DialogTurnStatus,
     NumberPrompt,
     TextPrompt,
-    WaterfallDialog
+    WaterfallDialog,
+    ListStyle
 } = require('botbuilder-dialogs');
 const { Channels } = require('botbuilder-core');
 
@@ -35,6 +36,7 @@ class EngagementBidDialog extends ComponentDialog {
             this.engagementIdStep.bind(this),
             this.engagementIdConfirmStep.bind(this),
             this.fetchEngagementDetailsStep.bind(this),
+            this.generateMapsHeroCard.bind(this),
             this.selectPropertyStep.bind(this),
             this.selectPropertyBidTurnaroundUnitStep.bind(this),
             this.selectPropertyBidTurnaroundTimeStep.bind(this),
@@ -66,14 +68,43 @@ class EngagementBidDialog extends ComponentDialog {
         console.log('fetching engagement', stepContext.result)
         let engagementData = {
             properties: [
-                {name: 'Hope Farm, 22002, United States', id: '11111111'},
-                {name: 'Washington Ave, 11153, United States', id: '222222'}
+                {name: 'Washington Ave., Houston, TX, USA', id: '11111111'},
+                {name: '1320 Fannin St, Houston, TX 77002, United States', id: '222222'}
             ]
         }
         stepContext.options['engagement'] = engagementData
         await stepContext.prompt(NAME_PROMPT, 'Fetching Engagement Details. Please wait.')
         return stepContext.next(engagementData)
         
+    }
+
+    async generateMapsHeroCard(stepContext) {
+        const engagementData = stepContext.result
+        await stepContext.context.sendActivity(`Found below properties in engagement. Click on 'Open in maps' button to view in google maps`)
+         await stepContext.context.sendActivity({
+             attachments: this.createHeroCard(engagementData.properties),
+             attachmentLayout: AttachmentLayoutTypes.Carousel
+         })
+         return await stepContext.next(engagementData)
+    }
+    createHeroCard(properties) {
+        let propertyCards = []
+        properties.forEach(property => {
+            propertyCards.push(
+                CardFactory.heroCard(
+                    property.name,
+                    CardFactory.images(['']),
+                    CardFactory.actions([
+                        {
+                            type: 'openUrl',
+                            title: 'Open in maps',
+                            value: 'https://www.google.com/maps/search/?api=1&query=' + encodeURI(property.name)
+                        }
+                    ])
+                )
+            )
+        })
+        return propertyCards    
     }
 
     async selectPropertyStep(stepContext) {
@@ -85,14 +116,15 @@ class EngagementBidDialog extends ComponentDialog {
                 synonyms: [property.name, ...property.name.split(', ')],
                 action: {
                     title: property.name
-                }
+                },
             }
             choices.push(choice)
         })
         const options = {
             prompt: 'Select the property you want to bid on.',
             retryPrompt: 'That was not a valid choice, please select an option from below',
-            choices: choices
+            choices: choices,
+            style: ListStyle.suggestedAction
         };
         return await stepContext.prompt('CHOICE_PROMPT', options);
     }
