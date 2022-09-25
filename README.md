@@ -18,26 +18,12 @@ This bot has been created using [Bot Framework](https://dev.botframework.com), i
 - Clone the repository
 
     ```bash
-    git clone https://github.com/microsoft/botbuilder-samples.git
+    git clone https://github.com/NishantKataria/Activate-Bid-Bot.git
     ```
 
-- In a terminal, navigate to `samples/javascript_nodejs/05.multi-turn-prompt`
-
-    ```bash
-    cd samples/javascript_nodejs/05.multi-turn-prompt
-    ```
-
-- Install modules
-
-    ```bash
-    npm install
-    ```
-
-- Start the bot
-
-    ```bash
-    npm start
-    ```
+- In a terminal, 
+    1) npm install
+    2) npm start
 
 ## Testing the bot using Bot Framework Emulator
 
